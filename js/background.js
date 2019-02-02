@@ -110,7 +110,7 @@ function get_gradient_options(prefix ,gradient) {
 		data = data.substr(data.indexOf(', ') + 2);
 		var start = data.substr(0, data.indexOf(') ') + 1);
 		data = data.substr(data.indexOf(') ') + 2)
-		color = star;
+		color = start;
 		
 		start_pos = data.substr(0, data.indexOf(', '));
 
@@ -297,7 +297,7 @@ function get_column_options(element) {
 function get_heading_options(element) {
 	var size;
 	heading = $('.elementor-heading-title', element);
-	options = {'html_tag': heading[0].tagName};
+	options = {'html_tag': heading[0].tagName.toLowerCase()};
 	var title = heading.text();
 	options['title'] = title;
 	var classlist = heading.attr('class');
@@ -662,7 +662,7 @@ function get_image_box_options(element) {
 
 	var image_box_content = $('.elementor-image-box-content', element);
 	options['title_text'] = $('.elementor-image-box-title', image_box_content).text();
-	options['title_size'] = $('.elementor-image-box-title', image_box_content)[0].tagName;
+	options['title_size'] = $('.elementor-image-box-title', image_box_content)[0].tagName.toLowerCase();
 	options['description_text'] = $('.elementor-image-box-description', image_box_content).text();
 	return options;
 }
@@ -848,7 +848,7 @@ function get_tabs_options(element) {
 	return options;
 }
 
-function get_accordtion_options(element) {
+function get_accordion_options(element) {
 	options = {};
 	
 	var icon_wrapper;
@@ -1047,6 +1047,98 @@ function get_countdown_options(element) {
 	return options;
 }
 
+function get_slides_options(element) {
+	options = {};
+	sliders = $('.slick-slide', element);
+	height = strtounit(sliders.eq(1).css('height'));
+	options['slides_height'] = height;
+	count = sliders.length / 2 - 1;
+	slides = [];
+	for (i = 0; i < count; i ++) {
+		slider = $('.slick-slide[data-slick-index="'+ i +'"]', element);
+		slide_options = {};
+		classlist = slider.attr('class');
+		classlist = classlist.split(' ');
+		for (j = 0; j < classlist.length; j ++) {
+			if (classlist[j].indexOf('elementor-repeater-item-') != -1) {
+				slide_options['_id'] = classlist[j].replace('elementor-repeater-item-', '')
+			}
+		}
+		slider_content = $('.elementor-slide-content', slider);
+		slide_options['heading'] = $('.elementor-slide-heading',slider_content).text();
+		if ($('.elementor-slide-description',slider_content).length > 0)
+			slide_options['description'] = $('.elementor-slide-description',slider_content).text();
+		if ($('.elementor-slide-button',slider_content).length > 0)
+			slide_options['button_text'] = $('.elementor-slide-button',slider_content).text();
+		slider_bg = $('.slick-slide-bg', slider);
+		slide_options['background_image'] = {
+			"url": slider_bg.css('background-image').substr(4, slider_bg.css('background-image').length - 5),
+			"id": Math.floor(Math.random() * 100)
+		}
+		slide_options['background_size'] = slider_bg.css('background-size');
+		slide_options['background_color'] = slider_bg.css('background-color');
+		classlist = slider_bg.attr('class');
+		classlist = classlist.split(' ');
+		for (k = 0; k < classlist.length; k ++) {
+			if (classlist[k].indexOf('elementor-ken-') != -1) {
+				slide_options['background_ken_burns'] = 'yes';
+				slide_options['zoom_direction'] = classlist[k].replace('elementor-ken-', '')
+			}
+		}
+		if($('.elementor-background-overlay',slider_content).length > 0) {
+			slide_options['background_overlay'] = 'yes';
+			slide_options['background_overlay_color'] = $('.elementor-background-overlay',slider_content).css('background-color');
+			slide_options['background_overlay_blend_mode'] = $('.elementor-background-overlay',slider_content).css('background-blend-mode') != 'normal' ? 
+			$('.elementor-background-overlay',slider_content).css('background-blend-mode') : '';
+		}
+		if($('.slick-slide-inner', slider)[0].tagName.toLowerCase() == 'a') {
+			slide_options['link_click'] = 'slide'
+			link = $('.slick-slide-inner', slider)
+			slide_options['link'] = {
+				'url': link.attr('href'),
+				'is_external': link.attr('target') == '_blank' ? 'yes' : '',
+				'nofollow': link.attr('rel') == 'nofollow' ? 'yes' : ''
+			}		
+		} else if($('.elementor-slide-button', slider)[0].tagName.toLowerCase() == 'a') {
+			slide_options['link_click'] = 'button'
+			link = $('.elementor-slide-button', slider);
+			slide_options['link'] = {
+				'url': link.attr('href'),
+				'is_external': link.attr('target') == '_blank' ? 'yes' : '',
+				'nofollow': link.attr('rel') == 'nofollow' ? 'yes' : ''
+			}
+		} 
+		if ($('.elementor-slide-heading', slider_content).css('color') != 'rgb(255, 255, 255)') {
+			slide_options['custom_style'] = 'yes'
+			slide_options['content_color'] = $('.elementor-slide-heading', slider_content).css('color');
+		}
+		if ($('.elementor-slide-inner', slider).css('text-align') != 'center') {
+			slide_options['custom_style'] = 'yes'
+			slide_options['text_align'] = $('.elementor-slide-inner', slider).css('text-align')
+		}
+		console.log($('.elementor-slide-inner', slider).css('align-items'));
+		if ($('.elementor-slide-inner', slider).css('align-items') != 'center') {
+			slide_options['custom_style'] = 'yes'
+			if($('.elementor-slide-inner', slider).css('align-items') == 'flex-start')
+				slide_options['vertical_position'] = 'top'
+			if($('.elementor-slide-inner', slider).css('align-items') == 'flex-end')
+				slide_options['vertical_position'] = 'bottom'
+		}
+		console.log(slider_content.css('margin-left'));
+		if (slider_content.css('margin-left') == 'auto') {
+			slide_options['custom_style'] = 'yes'
+			slide_options['horizontal_position'] = 'right'
+		}
+		if (slider_content.css('margin-right') == 'auto') {
+			slide_options['custom_style'] = 'yes'
+			slide_options['horizontal_position'] = 'left'
+		}
+		slides.push(slide_options);
+	}
+	options['slides'] = slides;
+	return options;
+}
+
 function get_element_options(element, element_type) {
 	switch(element_type) {
 		case 'section':
@@ -1129,6 +1221,12 @@ function get_element_options(element, element_type) {
 			break;
 		case 'form':
 			return get_form_options(element);
+			break;
+		case 'countdown':
+			return get_countdown_options(element);
+			break;
+		case 'slides':
+			return get_slides_options(element);
 			break;
 		default:
 			a = {};
