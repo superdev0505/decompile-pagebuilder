@@ -161,7 +161,7 @@ function check_background(prefix, element) {
 	var result = {}
 	var background_color;
 	background_color = element.css('background-color');
-	if (background_color != null) {
+	if (background_color != 'rgba(0, 0, 0, 0)') {
 		result[prefix + 'background'] = 'classic';
 		result[prefix + 'color'] = convertrgbtohex(background_color);
 	}
@@ -193,8 +193,8 @@ function check_background(prefix, element) {
 	} 
 	if (element.css('opacity') != 1) {
 		result['overlay_blend_mode'] = {
-			unit: 'px',
-			size: element.css('opacity')
+			'unit': 'px',
+			'size': element.css('opacity')
 		};
 	}
 	return result;
@@ -730,7 +730,7 @@ function get_icon_list_options(element) {
 		icon_info = {};
 		let link, content, text;
 		link = $('a', icons.eq(i));
-		if (link != null) {
+		if (link.length != 0) {
 			icon_info['link'] = {
 				'url': link.attr('href'),
 				'is_external': link.attr('target') == '_blank' ? 'yes' : '',
@@ -738,12 +738,14 @@ function get_icon_list_options(element) {
 			};
 		}
 		text = $('.elementor-icon-list-text', icons.eq(i));
-		if (text != null) {
+		if (text.length != 0) {
 			icon_info['text'] = text.text();
 		}
 		content = $('.elementor-icon-list-icon i', icons.eq(i));
-		if (content != null) {
+		if (content.length != 0) {
 			icon_info['icon'] = content.attr('class');
+		} else {
+			icon_info['icon'] = "";
 		}
 		icon_info['_id'] = Math.floor((Math.random() * 10000) + 1)
 		icons_list.push(icon_info);
@@ -756,6 +758,50 @@ function get_icon_list_options(element) {
 	}
 	if ($('.elementor-icon-list-text', icons.eq(0)).length != 0) {
 		options['text_color'] = convertrgbtohex($('.elementor-icon-list-text', icons.eq(0)).css('color'));
+	}
+	return options;
+}
+
+function get_icon_box_options(element) {
+	var options = {};
+	var classes = element.attr('class');
+	var classlist = classes.split(' ')
+	
+	for(var i = 0; i < classlist.length; i ++) {
+		if (classlist[i].indexOf('elementor-view-') != -1) {
+			temp = classlist[i];
+			options['view'] = temp.replace('elementor-view-', '');
+		} else if (classlist[i].indexOf('elementor-shape-') != -1) {
+			temp = classlist[i];
+			options['shape'] = temp.replace('elementor-shape-', '');
+		} else if (classlist[i].indexOf('elementor-position-') != -1) {
+			temp = classlist[i];
+			options['position'] = temp.replace('elementor-position-', '');
+		}
+	}
+	
+	icon = $('i', element);
+	if(icon.length != 0) {
+		options['icon'] = icon.attr('class');
+	} else {
+		options['icon'] = '';
+	}
+	title = $('.elementor-icon-box-title', element);
+	if (title.length != 0) {
+		options['title_size'] = title[0].tagName.toLowerCase();
+		options['title_text'] = title.text();
+	}
+	description = $('.elementor-icon-box-description', element);
+	if (description.length != 0) {
+		options['description'] = description.html();
+	}
+	link = $('a', title);
+	if (link.length != 0) {
+		options['link'] = {
+			'url': link.attr('href'),
+			'is_external': link.attr('target') == '_blank' ? 'yes' : '',
+			'nofollow': link.attr('rel') == 'nofollow' ? 'yes' : ''
+		};
 	}
 	return options;
 }
@@ -1050,9 +1096,12 @@ function get_countdown_options(element) {
 function get_slides_options(element) {
 	options = {};
 	sliders = $('.slick-slide', element);
-	height = strtounit(sliders.eq(1).css('height'));
+	height = strtounit(sliders.eq(0).css('height'));
 	options['slides_height'] = height;
-	count = sliders.length / 2 - 1;
+	if(sliders.length == 1)
+		count = 1;
+	else 
+		count = sliders.length / 2 - 1;
 	slides = [];
 	for (i = 0; i < count; i ++) {
 		slider = $('.slick-slide[data-slick-index="'+ i +'"]', element);
@@ -1099,7 +1148,7 @@ function get_slides_options(element) {
 				'is_external': link.attr('target') == '_blank' ? 'yes' : '',
 				'nofollow': link.attr('rel') == 'nofollow' ? 'yes' : ''
 			}		
-		} else if($('.elementor-slide-button', slider)[0].tagName.toLowerCase() == 'a') {
+		} else if($('.elementor-slide-button', slider).length != 0 && $('.elementor-slide-button', slider)[0].tagName.toLowerCase() == 'a') {
 			slide_options['link_click'] = 'button'
 			link = $('.elementor-slide-button', slider);
 			slide_options['link'] = {
@@ -1108,7 +1157,7 @@ function get_slides_options(element) {
 				'nofollow': link.attr('rel') == 'nofollow' ? 'yes' : ''
 			}
 		} 
-		if ($('.elementor-slide-heading', slider_content).css('color') != 'rgb(255, 255, 255)') {
+		if ($('.elementor-slide-heading', slider_content).length != 0 && $('.elementor-slide-heading', slider_content).css('color') != 'rgb(255, 255, 255)') {
 			slide_options['custom_style'] = 'yes'
 			slide_options['content_color'] = $('.elementor-slide-heading', slider_content).css('color');
 		}
@@ -1116,7 +1165,6 @@ function get_slides_options(element) {
 			slide_options['custom_style'] = 'yes'
 			slide_options['text_align'] = $('.elementor-slide-inner', slider).css('text-align')
 		}
-		console.log($('.elementor-slide-inner', slider).css('align-items'));
 		if ($('.elementor-slide-inner', slider).css('align-items') != 'center') {
 			slide_options['custom_style'] = 'yes'
 			if($('.elementor-slide-inner', slider).css('align-items') == 'flex-start')
@@ -1124,7 +1172,6 @@ function get_slides_options(element) {
 			if($('.elementor-slide-inner', slider).css('align-items') == 'flex-end')
 				slide_options['vertical_position'] = 'bottom'
 		}
-		console.log(slider_content.css('margin-left'));
 		if (slider_content.css('margin-left') == 'auto') {
 			slide_options['custom_style'] = 'yes'
 			slide_options['horizontal_position'] = 'right'
@@ -1138,6 +1185,47 @@ function get_slides_options(element) {
 	options['slides'] = slides;
 	return options;
 }
+
+function get_flip_options(element) {
+	options = {};
+	classes = element.attr('class');
+	classlist = classes.split(' ');
+	for (i = 0; i < classlist.length; i ++) {
+		if (classlist[i].indexOf('elementor-flip-box--direction-') != -1) {
+			options['flip_direction'] = classlist[i].replace('elementor-flip-box--direction-', '');
+		} else if (classlist[i].indexOf('elementor-flip-box--') != -1) {
+			options['flip_3d'] = classlist[i];
+		} else if (classlist[i].indexOf('elementor-flip-box--effect-') != -1) {
+			options['filip_effect'] = classlist[i].replace('elementor-flip-box--effect-', '');
+		}
+	}
+	options['border_radius'] = strtounit($('.elementor-flip-box__front', element).css('border-radius'));
+	a = $('.elementor-flip-box__front', element);
+	b = $('.elementor-flip-box__back', element);
+	background_a = check_background('background_a', a);
+	options = {...options, ...background_a};
+	background_b = b.length > 0 ? check_background('background_b', b) : {};
+	options = {...options, ...background_b};
+	options['background_overlay_a'] = $('.elementor-flip-box__layer__overlay', a).css('background-color') != 'rgba(0, 0, 0, 0)' ? 
+	
+	$('.elementor-flip-box__layer__overlay', a).css('background-color') : '';
+	options['background_overlay_b'] = $('.elementor-flip-box__layer__overlay', b).css('background-color') != 'rgba(0, 0, 0, 0)' ? 
+	$('.elementor-flip-box__layer__overlay', b).css('background-color') : '';
+
+	options['title_text_a'] = $('.elementor-flip-box__layer__title', a).text();
+	options['description_text_a'] = $('.elementor-flip-box__layer__description', a).text();
+	if($('.fa', a).length != 0) {
+		options['icon'] = $('.fa', a).attr('class');
+	}
+	options['title_text_b'] = $('.elementor-flip-box__layer__title', b).text();
+	options['description_text_b'] = $('.elementor-flip-box__layer__description', b).text();
+	if($('.elementor-flip-box__button', b).length != 0) {
+		options['button_text'] = $('.elementor-flip-box__button', b).text();
+	}
+	return options;
+}
+
+
 
 function get_element_options(element, element_type) {
 	switch(element_type) {
@@ -1228,6 +1316,12 @@ function get_element_options(element, element_type) {
 		case 'slides':
 			return get_slides_options(element);
 			break;
+		case 'flip-box':
+			return get_flip_options(element);
+			break;
+		case 'icon-box':
+			return get_icon_box_options(element);
+			break;
 		default:
 			a = {};
 			return a;
@@ -1246,7 +1340,7 @@ function check_elementor(element, order = -1) {
     var element_list = ['accordion', 'alert', 'audio', 'button', 'counter', 'divider', 'google_maps', 'heading', 'html', 'icon-box', 'icon-list', 
     'icon', 'image-box', 'image-carousel', 'image-gallery', 'image', 'menu-anchor', 'nav-menu', 'progress', 'shortcode', 'spacer','social-icons', 'star-rating', 'tabs', 'testimonial',
 	'text-editor', 'toggle', 'video','column', 'testimonial', 'section', 'slides', 'portfolio', 'posts', 'form', 'login', 'animated-headline', 'price-list', 'price-table', 'filp-box',
-	'filp-box', 'call-to-action', 'media-carousel', 'testerminal-carousel', 'countdown', 'share-buttons', 'block-quote', 'facebook-button', 'facebook-comments', 'facebook-embed', 
+	'flip-box', 'call-to-action', 'media-carousel', 'testerminal-carousel', 'countdown', 'share-buttons', 'block-quote', 'facebook-button', 'facebook-comments', 'facebook-embed', 
 	'facebook-page', 'template', 'site-logo', 'site-title', 'page-title', 'search-form'];
 	
     var return_val, type, id, items, options, inner, wi_type, result;
